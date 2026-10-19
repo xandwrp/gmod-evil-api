@@ -9,6 +9,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 - Settings: declare a table of rows and presets, get archived replicated convars, a superadmin-gated spawnmenu panel and a preset command
 - Claims and freezing, so mods can hold someone without fighting over them and let them go exactly as they were
 - Mash prompts: make a player hammer a key to break free or trigger anything else
+- Posing and gripping: hold someone half in a mouth for a cutscene, or drag their ragdoll by the foot
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Procedural mesh helpers for building dynamic runtime bodies
 - A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
@@ -103,3 +104,28 @@ Evil.Mashing(ply)
 Each counted press adds `gain` towards 1 and progress drains by `decay` a second. Presses are capped at `rate` a second with a `burst` of spare ones, so macros don't win. Reaching 1 calls `done`. Running out of `time` calls `fail`, and without a `time` it goes on until you stop it. It also stops if the player dies or respawns, or if `source` stops existing. The returned table can be changed while it runs.
 
 It works while the player is frozen. The key doesn't do its normal thing while mashing unless `block = false`. A prompt shows the player's bound key with a progress bar, unless `prompt = false` or they turn off `evil_mash_prompt`. Hooks: `EvilMashed(ply, source, progress)`, `EvilMashDone(ply, source)`, `EvilMashFailed(ply, source)`.
+
+### Posing and gripping
+
+Take someone you've grabbed and put them where you want, either stiff and animated or as a ragdoll you drag around. Either way the owner entity says where with one method, on whichever realms need it:
+
+```lua
+function ENT:EvilPose(victim)
+	return pos, ang, clipNormal, clipDist
+end
+```
+
+```lua
+Evil.Pose(victim, self, { act = ACT_BARNACLE_PULL, rate = 1, loop = true })
+Evil.Unpose(victim, self)
+Evil.Posed(victim)
+```
+
+Posing claims and freezes them, plays the sequence or activity, and moves them to `EvilPose` every tick. On the client it draws them wherever the owner's client `EvilPose` says, so it can line up with clientside smoothing, and cuts off everything on the far side of the clip plane if one is given (half in a mouth). A posed player gets a third person camera on themselves. If the owner goes away they're let go where they are. Hooks: `EvilPosed(ent, owner)`, `EvilUnposed(ent, owner)`.
+
+```lua
+Evil.Grip(victim, self, { bone = "ValveBiped.Bip01_R_Foot", speed = 600, push = vector })
+Evil.LetGo(victim, seconds)
+```
+
+Gripping knocks them down if they aren't already, claims the body and pulls that bone towards `EvilPose` with physics while the rest flops along. It never gets up on its own while held. Letting go, or the owner going away, leaves them downed for `seconds` before they get up. Hooks: `EvilGripped(ent, owner, ragdoll)`, `EvilLetGo(ent, owner)`.

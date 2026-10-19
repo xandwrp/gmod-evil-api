@@ -9,6 +9,9 @@ local CORPSE = 30
 local CORPSE_FADE = 2
 local PUSH = 300
 local PUSH_UP = 150
+local GRIP_SPEED = 600
+local GRIP_ARRIVE = 0.1
+local GRIP_DAMP = 0.8
 
 local downed = {}
 
@@ -78,6 +81,18 @@ local function Mark(ent, rag)
 	ent:SetNW2Entity("EvilRagdoll", rag or NULL)
 end
 
+local function Release(ent, taker)
+	local d = downed[ent]
+	if d and d.held == taker then return end
+	Evil.Up(ent)
+end
+
+local function Loosen(ent, d, time)
+	d.held, d.grip = nil, nil
+	d.up = CurTime() + (time or DOWN_TIME)
+	Evil.Claim(ent, d.rag, { loose = true, release = Release })
+end
+
 function Evil.Downed(ent)
 	local d = downed[ent]
 	return d and d.rag
@@ -111,7 +126,7 @@ function Evil.Down(ent, push, time)
 	end
 	rag:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 	Pose(rag, ent, ent:GetVelocity() + push)
-	if not Evil.Claim(ent, rag, { loose = true, release = Evil.Up }) then
+	if not Evil.Claim(ent, rag, { loose = true, release = Release }) then
 		rag:Remove()
 		return
 	end
@@ -131,7 +146,7 @@ function Evil.Up(ent)
 	local rag = d.rag
 	if IsValid(ent) then
 		Mark(ent, nil)
-		Evil.Unclaim(ent, rag)
+		Evil.Unclaim(ent, d.held or rag)
 		Evil.Thaw(ent)
 		local from = IsValid(rag) and rag:GetPos() or d.last
 		ent:SetPos(Stand(ent, from, IsValid(rag) and { ent, rag } or ent, d.home))
@@ -141,12 +156,55 @@ function Evil.Up(ent)
 	if IsValid(ent) then hook.Run("EvilUp", ent) end
 end
 
+function Evil.Grip(ent, owner, opts)
+	opts = opts or {}
+	if not IsValid(owner) then return end
+	local rag = Evil.Downed(ent) or Evil.Down(ent, opts.push)
+	local d = rag and downed[ent]
+	if not d then return end
+	local prev = d.held
+	d.held = owner
+	if not Evil.Claim(ent, owner) then
+		d.held = prev
+		return
+	end
+	local bone = opts.bone and rag:LookupBone(opts.bone)
+	local phys = bone and rag:TranslateBoneToPhysBone(bone) or 0
+	d.grip = { phys = phys >= 0 and phys or 0, speed = opts.speed or GRIP_SPEED }
+	hook.Run("EvilGripped", ent, owner, rag)
+	return rag
+end
+
+function Evil.LetGo(ent, time)
+	local d = downed[ent]
+	if not d or not d.held then return end
+	local owner = d.held
+	Evil.Unclaim(ent, owner)
+	Loosen(ent, d, time)
+	hook.Run("EvilLetGo", ent, owner)
+end
+
+local function Pull(ent, d, dt)
+	local owner = d.held
+	if not owner.EvilPose then return end
+	local pos, ang = owner:EvilPose(ent)
+	local phys = d.rag:GetPhysicsObjectNum(d.grip.phys)
+	if not pos or not IsValid(phys) then return end
+	phys:Wake()
+	phys:ComputeShadowControl({
+		secondstoarrive = GRIP_ARRIVE, pos = pos, angle = ang or phys:GetAngles(),
+		maxspeed = d.grip.speed, maxspeeddamp = d.grip.speed * 2,
+		maxangular = ang and d.grip.speed or 0, maxangulardamp = ang and d.grip.speed * 2 or 0,
+		dampfactor = GRIP_DAMP, teleportdistance = 0, deltatime = dt,
+	})
+end
+
 local function Corpse(ent)
 	local d = downed[ent]
 	if not d then return end
 	downed[ent] = nil
 	local rag = d.rag
-	Evil.Unclaim(ent, rag)
+	Evil.Unclaim(ent)
 	if IsValid(rag) then
 		rag.EvilDowned = nil
 		rag:Fire("FadeAndRemove", tostring(CORPSE_FADE), CORPSE)
@@ -159,7 +217,7 @@ local function Still(rag)
 end
 
 hook.Add("Think", "EvilDown", function()
-	local now = CurTime()
+	local now, dt = CurTime(), FrameTime()
 	for ent, d in pairs(downed) do
 		if not IsValid(ent) then
 			downed[ent] = nil
@@ -169,7 +227,10 @@ hook.Add("Think", "EvilDown", function()
 		else
 			d.last = d.rag:GetPos()
 			ent:SetPos(d.last)
-			if now >= d.up and (Still(d.rag) or now >= d.up + LATE) then Evil.Up(ent) end
+			if d.held and Evil.Owner(ent) ~= d.held then Loosen(ent, d) end
+			if d.held then
+				Pull(ent, d, dt)
+			elseif now >= d.up and (Still(d.rag) or now >= d.up + LATE) then Evil.Up(ent) end
 		end
 	end
 end)
