@@ -23,7 +23,7 @@ local function Pack(c)
 	return math.Round(c.r) * 65536 + math.Round(c.g) * 256 + math.Round(c.b)
 end
 
-local function Admin(control)
+function Evil.AdminOnly(control)
 	local ply = LocalPlayer()
 	local admin = IsValid(ply) and ply:IsSuperAdmin()
 	if control:IsEnabled() ~= admin then control:SetEnabled(admin) end
@@ -49,7 +49,7 @@ function Settings:Presets(panel)
 			RunConsoleCommand(self.id .. "_preset", preset.name)
 		end
 		b.Think = function(btn)
-			Admin(btn)
+			Evil.AdminOnly(btn)
 			local on = self:PresetActive(preset)
 			if btn:GetToggle() ~= on then btn:SetToggle(on) end
 		end
@@ -86,7 +86,7 @@ function Settings:Row(panel, s)
 		control:SetChecked(cv:GetBool())
 		control.OnChange = function(_, on) Send(s, on and 1 or 0) end
 		control.Think = function(box)
-			Admin(box)
+			Evil.AdminOnly(box)
 			if Settled(s) and box:GetChecked() ~= cv:GetBool() then box:SetChecked(cv:GetBool()) end
 		end
 	else
@@ -94,7 +94,7 @@ function Settings:Row(panel, s)
 		control:SetValue(cv:GetFloat())
 		control.OnValueChanged = function(_, value) Send(s, value) end
 		control.Think = function(slider)
-			Admin(slider)
+			Evil.AdminOnly(slider)
 			if Settled(s) and not slider:IsEditing() and math.abs(slider:GetValue() - cv:GetFloat()) > 1e-3 then
 				slider:SetValue(cv:GetFloat())
 			end
@@ -114,7 +114,7 @@ function Settings:Build(panel)
 		reset.DoClick = function()
 			for _, s in ipairs(self.rows) do Send(s, s.default) end
 		end
-		reset.Think = Admin
+		reset.Think = Evil.AdminOnly
 	end
 	if self.extra then self.extra(panel) end
 end
