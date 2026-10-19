@@ -7,6 +7,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 ## Features
 
 - Settings: declare a table of rows and presets, get archived replicated convars, a superadmin-gated spawnmenu panel and a preset command
+- Claims and freezing, so mods can hold someone without fighting over them and let them go exactly as they were
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Procedural mesh helpers for building dynamic runtime bodies
 - A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
@@ -44,3 +45,37 @@ settings:Color("color")
 Each row becomes the convar `<id>_<name>`. A max of 1 with no decimals is a checkbox, `color` is a colour mixer, anything else is a slider. `needs` hides the row unless that global exists.
 
 Optional fields: `fill = true` makes presets put anything they leave out back to its default, `reset = false` drops the reset button, and `top` / `extra = function(panel) end` add your own controls above or below the rest. `Evil.AdminOnly` as a control's Think greys it out for anyone but superadmins.
+
+### Claims
+
+One answer to who has someone right now, so mods don't grab each other's victims.
+
+```lua
+if Evil.Claim(victim, self) then ... end
+Evil.Claim(victim, self, { loose = true, release = function(victim, taker) end })
+Evil.Claimable(victim, self)
+Evil.Owner(victim)
+Evil.Unclaim(victim, self)
+```
+
+A `loose` claim can be taken by anyone else, and `release` runs on the old owner's side when that happens. Players lose their claim when they respawn. Hooks: `EvilClaimed(ent, owner)`, `EvilUnclaimed(ent, old, taker)`.
+
+### Freezing
+
+```lua
+Evil.Freeze(ent, hide)
+Evil.Thaw(ent)
+Evil.Frozen(ent)
+```
+
+Stops an NPC or player where they are: no thinking, moving, collision, shadow, targeting or weapon. Players can't move, shoot, use, switch weapons, noclip, get in vehicles or pick things up. `hide` also stops them drawing. Thawing puts back exactly what was there before.
+
+### Knockdown
+
+```lua
+Evil.Down(ent, push, seconds)
+Evil.Up(ent)
+Evil.Downed(ent)
+```
+
+Ragdolls an NPC or player without killing them. The ragdoll copies their pose, look and velocity plus `push`, and they get up from where it settles once the time is up. Players stay alive with the camera on their ragdoll, damage to the ragdoll goes to them, and if they die it stays as the corpse. A downed body is a loose claim, so another mod can claim it and they get straight up. Hooks: `EvilDown(ent, ragdoll)`, `EvilUp(ent)`. `evil_down [seconds]` knocks down who you're looking at.
