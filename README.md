@@ -80,7 +80,7 @@ Evil.Up(ent)
 Evil.Downed(ent)
 ```
 
-Ragdolls an NPC or player without killing them. The ragdoll copies their pose, look and velocity plus `push`, and they get up from where it settles once the time is up. Players stay alive with the camera on their ragdoll, damage to the ragdoll goes to them, and if they die it stays as the corpse. A downed body is a loose claim, so another mod can claim it and they get straight up. Hooks: `EvilDown(ent, ragdoll)`, `EvilUp(ent)`. `evil_down [seconds]` knocks down who you're looking at.
+Ragdolls an NPC or player without killing them. The ragdoll copies their pose, look and velocity plus `push`, and they get up from where it settles once the time is up. Players stay alive with the camera on their ragdoll, damage to the ragdoll goes to them, and if they die it stays as the corpse. A downed body is a loose claim, so another mod can claim it and they get straight up, unless it grips the body instead. Hooks: `EvilDown(ent, ragdoll)`, `EvilUp(ent)`. `evil_down [seconds]` knocks down who you're looking at.
 
 ### Mashing
 
