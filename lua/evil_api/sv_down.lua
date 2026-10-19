@@ -29,7 +29,6 @@ local function Dress(rag, ent)
 end
 
 local function Pose(rag, ent, vel)
-	ent:SetupBones()
 	for i = 0, rag:GetPhysicsObjectCount() - 1 do
 		local phys = rag:GetPhysicsObjectNum(i)
 		if IsValid(phys) then
