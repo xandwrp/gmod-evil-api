@@ -12,16 +12,20 @@ if SERVER then
 	AddCSLuaFile("evil_api/sh_claim.lua")
 	AddCSLuaFile("evil_api/sh_freeze.lua")
 	AddCSLuaFile("evil_api/cl_down.lua")
+	AddCSLuaFile("evil_api/sh_mash.lua")
+	AddCSLuaFile("evil_api/cl_mash.lua")
 end
 
 include("evil_api/sh_settings.lua")
 include("evil_api/sh_claim.lua")
 include("evil_api/sh_freeze.lua")
+include("evil_api/sh_mash.lua")
 if SERVER then
 	include("evil_api/sv_down.lua")
 else
 	include("evil_api/cl_settings.lua")
 	include("evil_api/cl_down.lua")
+	include("evil_api/cl_mash.lua")
 end
 
 Evil.LOADED = true

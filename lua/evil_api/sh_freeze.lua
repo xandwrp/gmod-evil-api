@@ -9,6 +9,7 @@ end
 
 hook.Add("StartCommand", "EvilFreeze", function(ply, cmd)
 	if Frozen(ply) then
+		Evil.MashInput(ply, cmd)
 		cmd:ClearButtons()
 		cmd:ClearMovement()
 	end

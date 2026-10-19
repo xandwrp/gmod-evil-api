@@ -8,6 +8,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 
 - Settings: declare a table of rows and presets, get archived replicated convars, a superadmin-gated spawnmenu panel and a preset command
 - Claims and freezing, so mods can hold someone without fighting over them and let them go exactly as they were
+- Mash prompts: make a player hammer a key to break free or trigger anything else
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Procedural mesh helpers for building dynamic runtime bodies
 - A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
@@ -79,3 +80,26 @@ Evil.Downed(ent)
 ```
 
 Ragdolls an NPC or player without killing them. The ragdoll copies their pose, look and velocity plus `push`, and they get up from where it settles once the time is up. Players stay alive with the camera on their ragdoll, damage to the ragdoll goes to them, and if they die it stays as the corpse. A downed body is a loose claim, so another mod can claim it and they get straight up. Hooks: `EvilDown(ent, ragdoll)`, `EvilUp(ent)`. `evil_down [seconds]` knocks down who you're looking at.
+
+### Mashing
+
+Make a player mash a key to do something, like break free.
+
+```lua
+local m = Evil.Mash(ply, self, {
+	key = IN_JUMP,
+	gain = 0.1,
+	decay = 0.15,
+	time = 4,
+	done = function(ply, source) end,
+	fail = function(ply, source) end,
+	press = function(ply, progress, source) end,
+})
+m.decay = 0.4
+Evil.StopMash(ply)
+Evil.Mashing(ply)
+```
+
+Each counted press adds `gain` towards 1 and progress drains by `decay` a second. Presses are capped at `rate` a second with a `burst` of spare ones, so macros don't win. Reaching 1 calls `done`. Running out of `time` calls `fail`, and without a `time` it goes on until you stop it. It also stops if the player dies or respawns, or if `source` stops existing. The returned table can be changed while it runs.
+
+It works while the player is frozen. The key doesn't do its normal thing while mashing unless `block = false`. A prompt shows the player's bound key with a progress bar, unless `prompt = false` or they turn off `evil_mash_prompt`. Hooks: `EvilMashed(ply, source, progress)`, `EvilMashDone(ply, source)`, `EvilMashFailed(ply, source)`.
