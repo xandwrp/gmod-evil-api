@@ -10,6 +10,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 - Claims and freezing, so mods can hold someone without fighting over them and let them go exactly as they were
 - Mash prompts: make a player hammer a key to break free or trigger anything else
 - Posing and gripping: hold someone half in a mouth for a cutscene, or drag their ragdoll by the foot
+- Presence: one shared source of NPC fear, so anything scared by one evil thing runs from all of them
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Procedural mesh helpers for building dynamic runtime bodies
 - A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
@@ -129,3 +130,27 @@ Evil.LetGo(victim, seconds)
 ```
 
 Gripping knocks them down if they aren't already, claims the body and pulls that bone towards `EvilPose` with physics while the rest flops along. It never gets up on its own while held. Letting go, or the owner going away, leaves them downed for `seconds` before they get up. Hooks: `EvilGripped(ent, owner, ragdoll)`, `EvilLetGo(ent, owner)`.
+
+### Presence
+
+One source of NPC fear shared by every mod, so something scared by one evil thing runs from all of them.
+
+```lua
+Evil.Presence(self, { reach = 400, dread = 4, near = function(self, pos) return point end })
+Evil.Absent(self)
+Evil.Scare(npc, seconds)
+Evil.Frighten(pos, radius, seconds, flee)
+Evil.Flee(npc, from)
+Evil.Afraid(ent)
+Evil.Fear(ent)
+```
+
+- **Presences:** register an evil thing as a presence. `near` gives the closest point of it to a position, for things bigger than their origin like a long body or a fungus mat.
+- **Running away:** scared NPCs run from the nearest presence they get within `reach` of. The more scared they are, the further out they start running.
+- **Dread:** a presence with `dread` scares NPCs that can see it within `reach`, by that many seconds of fear for every second they look. At 0 it only scares NPCs that are already afraid of something.
+- **Fear itself:** fear is counted in seconds and adds up to a cap. `Evil.Fear` gives it from 0 to 1.
+  - `Scare` adds fear to one NPC or player.
+  - `Frighten` scares every NPC in a radius, and with `flee` they all run from that spot straight away.
+- **NPC support:** engine NPCs, VJ Base and DrGBase NPCs all run. DrGBase ones are set to fear the presence until they calm down.
+- **Settings:** the Evil presence settings panel scales every mod's fear at once and can stop scared NPCs running.
+- **Hooks:** `EvilScared(ent, seconds)`, `EvilFled(npc, from, to)`.
