@@ -1,0 +1,11 @@
+{
+	"title": "Syhgma's Evil API",
+	"type": "tool",
+	"tags": [ "fun" ],
+	"ignore": [
+		"*.md",
+		"*.gma",
+		".git*",
+		"tools/*"
+	]
+}
