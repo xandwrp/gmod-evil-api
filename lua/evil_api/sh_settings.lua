@@ -10,7 +10,7 @@ Evil.SettingsByConVar = byConVar
 function Evil.Settings(def)
 	local self = setmetatable({
 		id = def.id, title = def.title, rows = def.rows, presets = def.presets or {},
-		fill = def.fill, reset = def.reset ~= false, extra = def.extra, convars = {},
+		fill = def.fill, reset = def.reset ~= false, top = def.top, extra = def.extra, convars = {},
 	}, Settings)
 	for _, s in ipairs(self.rows) do
 		s.convar = self.id .. "_" .. s.name

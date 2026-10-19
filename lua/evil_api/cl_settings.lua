@@ -104,6 +104,7 @@ function Settings:Row(panel, s)
 end
 
 function Settings:Build(panel)
+	if self.top then self.top(panel) end
 	self:Presets(panel)
 	for _, s in ipairs(self.rows) do
 		if not s.needs or _G[s.needs] then self:Row(panel, s) end
