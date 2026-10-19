@@ -20,6 +20,7 @@ if SERVER then
 end
 
 include("evil_api/sh_settings.lua")
+if CLIENT then include("evil_api/cl_settings.lua") end
 include("evil_api/sh_claim.lua")
 include("evil_api/sh_freeze.lua")
 include("evil_api/sh_mash.lua")
@@ -28,7 +29,6 @@ include("evil_api/sh_presence.lua")
 if SERVER then
 	include("evil_api/sv_down.lua")
 else
-	include("evil_api/cl_settings.lua")
 	include("evil_api/cl_down.lua")
 	include("evil_api/cl_mash.lua")
 	include("evil_api/cl_pose.lua")
