@@ -28,6 +28,7 @@ include("evil_api/sh_pose.lua")
 include("evil_api/sh_presence.lua")
 if SERVER then
 	include("evil_api/sv_down.lua")
+	include("evil_api/sv_soul.lua")
 else
 	include("evil_api/cl_down.lua")
 	include("evil_api/cl_mash.lua")

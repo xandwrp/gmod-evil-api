@@ -13,6 +13,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 - Presence: one shared source of NPC fear, so anything scared by one evil thing runs from all of them
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Procedural mesh helpers for building dynamic runtime bodies
+- Soul digestion: keep track of how each player gets away from something, and hand it all over once it eats them
 - A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
 
 ## Using it
@@ -154,3 +155,25 @@ Evil.Fear(ent)
 - **NPC support:** engine NPCs, VJ Base and DrGBase NPCs all run. DrGBase ones are set to fear the presence until they calm down.
 - **Settings:** the Evil presence settings panel scales every mod's fear at once and can stop scared NPCs running.
 - **Hooks:** `EvilScared(ent, seconds)`, `EvilFled(npc, from, to)`.
+
+### Soul digestion
+
+Remember what each player did to get away from you, and take it off them when you eat them.
+
+```lua
+local souls = Evil.SoulDigestion({ id = "evil_thing", tricks = { slipped = 3, outran = 3, noclip = 30 } })
+souls:Watch(ply, "outran")
+souls:Watch(ply, "noclip", seconds)
+souls:Skill(ply, "outran")
+souls:Skills(ply)
+souls:Worth(ply)
+local learned = souls:Digest(ply)
+souls:Forget(ply)
+```
+
+- **Tricks:** each one is a name and how much of it a player has to do before they're as good at it as they get.
+- **Watching:** `Watch` adds to what that player has done, once a tick per trick however many things see it. `amount` defaults to 1, so count times or seconds, whichever fits.
+- **Skill:** `Skill` is how good they are at one trick from 0 to 1, `Skills` gives every trick they've done any of, and `Worth` adds them up.
+- **Digesting:** `Digest` returns their skills, or nil if they had none, and wipes the slate so they start over. It takes a player or a profile from `souls:Profile(ply)`, for when you kept the profile and the player is long gone.
+- **Per mod:** each `id` keeps its own profiles, so getting away from one evil thing teaches nothing to another. Profiles go by SteamID, so they last through respawns and rejoins until the map changes.
+- **Hooks:** `EvilSoulWatched(id, ply, trick, total)`, `EvilSoulDigested(id, who, skills)`.
