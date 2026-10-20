@@ -24,7 +24,12 @@ hook.Add("PlayerSwitchWeapon", "EvilFreeze", function(ply)
 	if Frozen(ply) then return true end
 end)
 
-if CLIENT then return end
+if CLIENT then
+	hook.Add("PrePlayerDraw", "EvilFreeze", function(ply)
+		if ply:GetNW2Bool("EvilHidden") then return true end
+	end)
+	return
+end
 
 function Evil.Freeze(ent, hide)
 	if not IsValid(ent) then return end
@@ -53,7 +58,11 @@ function Evil.Freeze(ent, hide)
 			if f.weapon then f.weapon:SetNoDraw(true) end
 		end
 	end
-	ent:SetNoDraw(hide or not f.draw)
+	if ent:IsPlayer() then
+		ent:SetNW2Bool("EvilHidden", hide or false)
+	else
+		ent:SetNoDraw(hide or not f.draw)
+	end
 end
 
 function Evil.Thaw(ent, keepMove)
@@ -69,6 +78,7 @@ function Evil.Thaw(ent, keepMove)
 		ent:DrawViewModel(true)
 		ent:DrawWorldModel(true)
 		ent:SetNW2Bool("EvilFrozen", false)
+		ent:SetNW2Bool("EvilHidden", false)
 	else
 		if f.think then ent:RemoveEFlags(EFL_NO_THINK_FUNCTION) end
 		if IsValid(f.weapon) then f.weapon:SetNoDraw(false) end
