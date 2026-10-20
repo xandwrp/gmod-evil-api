@@ -12,10 +12,8 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 - Posing and gripping: hold someone half in a mouth for a cutscene, or drag their ragdoll by the foot
 - Presence: one shared source of NPC fear, so anything scared by one evil thing runs from all of them
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
-- Procedural mesh helpers for building dynamic runtime bodies
 - Soul digestion: keep track of how each player gets away from something, and hand it all over once it eats them
 - Damage and hitboxes: let a body made of many pieces get hurt by bullets, explosions, fire, props and anything else, through the normal damage hooks, with per kind damage settings
-- A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
 
 ## Using it
 
