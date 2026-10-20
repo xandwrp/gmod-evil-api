@@ -13,21 +13,22 @@ local function Draw(ent, flags)
 		ent:DrawModel(flags)
 		return
 	end
+	local was = ent:GetRenderAngles()
 	ent:SetRenderOrigin(pos)
-	ent:SetRenderAngles(ang)
+	ent:SetRenderAngles(ang or was)
 	ent:InvalidateBoneCache()
 	ent:SetupBones()
 	if clipNormal then
-		local was = render.EnableClipping(true)
+		local clip = render.EnableClipping(true)
 		render.PushCustomClipPlane(clipNormal, clipDist)
 		ent:DrawModel(flags)
 		render.PopCustomClipPlane()
-		render.EnableClipping(was)
+		render.EnableClipping(clip)
 	else
 		ent:DrawModel(flags)
 	end
 	ent:SetRenderOrigin(nil)
-	ent:SetRenderAngles(nil)
+	ent:SetRenderAngles(was)
 	ent:InvalidateBoneCache()
 end
 
