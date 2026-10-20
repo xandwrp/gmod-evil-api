@@ -14,6 +14,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Soul digestion: keep track of how each player gets away from something, and hand it all over once it eats them
 - Damage and hitboxes: let a body made of many pieces get hurt by bullets, explosions, fire, props and anything else, through the normal damage hooks, with per kind damage settings
+- Stomachs: an append-only list of everything something has eaten, with a context menu to look inside it in game
 
 ## Using it
 
@@ -209,3 +210,38 @@ Evil.Attacker(dmg)
 - **Kinds:** every damage type falls into explosive, bullet, melee, fire, energy, toxic, crush or other. `DamageKind` says which.
 - **Settings:** `DamageRows` gives a settings row per kind named `dmg_<kind>`, to drop into your own rows, and `DamageScale` reads the right one for a hit.
 - **Attackers:** `Attacker` sorts who did it into player, npc or world, counting a vehicle's driver as the player.
+
+### Stomachs
+
+Keep a list of everything something has eaten, and let people right click it to see inside.
+
+```lua
+self.Stomach = Evil.Stomach(self)
+self.Stomach.onDigest = function(v) end
+local v = self.Stomach:Eat(victim, { size = 1.2 })
+self.Stomach:Add({ kind = "corpse", name = "someone" })
+self.Stomach:Settle(v)
+self.Stomach:Count()
+self.Stomach:Changed()
+Evil.Describe(ent)
+```
+
+- **Victims:** `Eat` records who they were (name, class, model, SteamID, weapon, health and `kind` as player, npc or thing) plus anything in `extra`, and returns the record. `Add` takes a record you built yourself, like one from `Evil.Describe` you saved while they were still alive. The list only ever grows, each record keeps its place as `v.n`.
+- **Digesting:** `Settle` marks a victim digested and calls `onDigest`. Call `Changed` if you rewrite the list so open menus reload it.
+- **Menu:** register a view on the client and the owner gets a Stomach option in the context menu. It lists every victim with a model preview and details, and refreshes while it's open.
+
+```lua
+Evil.StomachView({
+	class = "evil_thing",
+	title = "Evil thing stomach",
+	top = 96,
+	columns = { { "Mass", 50, function(v, view) return ("%.2f"):format(v.mass), v.mass end } },
+	refresh = function(view) end,
+	summary = function(view, w, h) end,
+	info = function(view, v) view:Pair("Mass", ("%.2f"):format(v.mass)) end,
+})
+```
+
+- **Owner methods:** on the server, `ENT:EvilStomachSummary()` returns a table that reaches the client as `view.summary`, and `ENT:EvilStomachProgress()` returns `{ { n, 0 to 1 }, ... }` for victims still going down.
+- **View:** `columns` are `{ name, width, function(v, view) return text, sort end }`. `refresh` runs before every redraw of the rows, `summary` draws below the header line (from y 42), `info` adds lines under the selected victim with `view:Pair(label, value, color)` and `view:Heading(text)`. `view:Share(v)` is how far down a victim is from 0 to 1. Any soul digestion `tricks` on a record show up on their own.
+- **Hooks:** `EvilSwallowed(owner, victim)`, `EvilDigested(owner, victim)`.

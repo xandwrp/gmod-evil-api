@@ -18,6 +18,7 @@ if SERVER then
 	AddCSLuaFile("evil_api/cl_pose.lua")
 	AddCSLuaFile("evil_api/sh_presence.lua")
 	AddCSLuaFile("evil_api/sh_damage.lua")
+	AddCSLuaFile("evil_api/cl_stomach.lua")
 end
 
 include("evil_api/sh_settings.lua")
@@ -32,10 +33,12 @@ if SERVER then
 	include("evil_api/sv_down.lua")
 	include("evil_api/sv_soul.lua")
 	include("evil_api/sv_hitbox.lua")
+	include("evil_api/sv_stomach.lua")
 else
 	include("evil_api/cl_down.lua")
 	include("evil_api/cl_mash.lua")
 	include("evil_api/cl_pose.lua")
+	include("evil_api/cl_stomach.lua")
 end
 
 Evil.LOADED = true
