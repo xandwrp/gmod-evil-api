@@ -75,7 +75,9 @@ local function Cow(npc, p, ent)
 	local target = IsValid(p.target) and p.target or ent
 	npc.EvilCowed = npc.EvilCowed or {}
 	if npc.EvilCowed[target] then return end
-	npc.EvilCowed[target] = true
+	local disp, prio = D_NU, 1
+	if npc.GetEntityRelationship then disp, prio = npc:GetEntityRelationship(target) end
+	npc.EvilCowed[target] = { disp = disp, prio = prio }
 	npc:SetEntityRelationship(target, D_FR, COWED_PRIORITY)
 end
 
@@ -83,8 +85,8 @@ local function Calm(npc)
 	local cowed = npc.EvilCowed
 	npc.EvilCowed = nil
 	if not cowed or not npc.SetEntityRelationship then return end
-	for target in pairs(cowed) do
-		if IsValid(target) then npc:SetEntityRelationship(target, D_NU, 1) end
+	for target, was in pairs(cowed) do
+		if IsValid(target) then npc:SetEntityRelationship(target, was.disp, was.prio) end
 	end
 end
 
