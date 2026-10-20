@@ -35,6 +35,7 @@ function Evil.MashInput(ply, cmd)
 		end
 	end
 	ply.EvilMashHeld = down
+	if CLIENT then return down and key or nil end
 	if ply:GetNW2Bool("EvilMashBlock") then cmd:RemoveKey(key) end
 end
 

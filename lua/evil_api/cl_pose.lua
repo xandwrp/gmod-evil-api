@@ -26,8 +26,8 @@ local function Draw(ent, flags)
 	else
 		ent:DrawModel(flags)
 	end
-	ent:SetRenderOrigin()
-	ent:SetRenderAngles()
+	ent:SetRenderOrigin(nil)
+	ent:SetRenderAngles(nil)
 	ent:InvalidateBoneCache()
 end
 
