@@ -131,7 +131,10 @@ function Evil.Frighten(pos, radius, seconds, flee)
 end
 
 local function Sees(npc, ent, point)
-	local tr = util.TraceLine({ start = npc:EyePos(), endpos = point, mask = MASK_BLOCKLOS, filter = { npc, ent } })
+	local tr = util.TraceLine({
+		start = npc:EyePos(), endpos = point, mask = MASK_BLOCKLOS,
+		filter = function(e) return e ~= npc and e ~= ent and e.EvilHitboxOwner ~= ent end,
+	})
 	return not tr.Hit
 end
 

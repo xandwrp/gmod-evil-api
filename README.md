@@ -14,6 +14,7 @@ Every feature of this API is as isolated as possible, and the goal is to make th
 - An easy way to ragdoll somebody without killing them, and let them stand back up from where they rest at any time
 - Procedural mesh helpers for building dynamic runtime bodies
 - Soul digestion: keep track of how each player gets away from something, and hand it all over once it eats them
+- Damage and hitboxes: let a body made of many pieces get hurt by bullets, explosions, fire, props and anything else, through the normal damage hooks, with per kind damage settings
 - A hackable stomach API that maintains an append-only list of previously-consumed entities, which can be used to drive all sorts of cool behavioral systems based on victim composition, including a reusable context menu plugin to visualize the contents of an entity's stomach in-game
 
 ## Using it
@@ -177,3 +178,36 @@ souls:Forget(ply)
 - **Digesting:** `Digest` returns their skills, or nil if they had none, and wipes the slate so they start over. It takes a player or a profile from `souls:Profile(ply)`, for when you kept the profile and the player is long gone.
 - **Per mod:** each `id` keeps its own profiles, so getting away from one evil thing teaches nothing to another. Profiles go by SteamID, so they last through respawns and rejoins until the map changes.
 - **Hooks:** `EvilSoulWatched(id, ply, trick, total)`, `EvilSoulDigested(id, who, skills)`.
+
+### Damage and hitboxes
+
+Make something with a body that isn't one solid entity, like a long chain, take damage from everything the way a normal entity does.
+
+```lua
+self.Hitbox = Evil.Hitbox(self, { ignite = function(seconds) end })
+self.Hitbox:Place(points, radius)
+self.Hitbox:Think(CurTime())
+self.Hitbox:Clear()
+local amount = self.Hitbox:Fresh(dmg)
+Evil.HitboxOwner(ent)
+```
+
+- **Hitboxes:** `Place` puts invisible server side boxes along a list of points, overlapping so there are no gaps, and moves, resizes, adds or removes them as the points change. `radius` is a number or `function(i)` for the size at point `i`. It caps out at 48 boxes and spreads them out past that.
+- **Damage:** anything that hits a box, whether it traces, finds entities in a sphere, explodes or burns, gets passed to the owner as a copy through `TakeDamageInfo`, so other mods' `EntityTakeDamage` hooks see the owner getting hurt and never see the boxes. `owner.EvilStruckPart` is the box that got hit while it runs.
+- **Spread damage:** explosions, fire and gas that catch several boxes at once only count once, the biggest hit wins. Call `Fresh` in the owner's `OnTakeDamage` to get the amount to apply, so a blast catching the owner and a box doesn't count twice.
+- **Impacts:** physics props and vehicles moving fast through a box hurt the owner with `DMG_CRUSH` or `DMG_VEHICLE`, credited to whoever threw or drove them.
+- **Fire:** a box that gets set on fire puts itself out and sets the owner on fire instead, or calls `ignite`.
+- **Traces:** boxes are debris, so players, NPCs and props walk through them, but traces hit them. Filter them out of your own traces with `Evil.HitboxOwner`.
+
+```lua
+Evil.DAMAGE_KINDS
+Evil.DamageKind(dmg)
+Evil.DamageRows(defaults, max)
+Evil.DamageScale(settings, dmg)
+Evil.AreaDamage(dmg)
+Evil.Attacker(dmg)
+```
+
+- **Kinds:** every damage type falls into explosive, bullet, melee, fire, energy, toxic, crush or other. `DamageKind` says which.
+- **Settings:** `DamageRows` gives a settings row per kind named `dmg_<kind>`, to drop into your own rows, and `DamageScale` reads the right one for a hit.
+- **Attackers:** `Attacker` sorts who did it into player, npc or world, counting a vehicle's driver as the player.
