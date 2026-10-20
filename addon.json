@@ -1,8 +1,7 @@
 {
 	"title": "Syhgma's Evil API",
 	"type": "tool",
-	"tags": [
-		"fun" ],
+	"tags": [ "fun" ],
 	"ignore": [
 		"*.md",
 		"*.gma",
