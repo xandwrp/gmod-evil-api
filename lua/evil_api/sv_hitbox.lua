@@ -88,6 +88,7 @@ function Hitbox:Spawn()
 	part:SetPos(self.owner:GetPos())
 	part:SetOwner(self.owner)
 	part:Spawn()
+	self.owner:DeleteOnRemove(part)
 	return part
 end
 
