@@ -1,5 +1,6 @@
 local GAP = 0.1
 local CHUNK = 64
+local LIMIT = 60000
 
 local Stomach = Evil.StomachMeta or {}
 Stomach.__index = Stomach
@@ -82,6 +83,12 @@ local function Record(v)
 	return out
 end
 
+local function Half(t)
+	local out = {}
+	for i = 1, math.floor(#t / 2) do out[i] = t[i] end
+	return out
+end
+
 net.Receive("EvilStomach", function(_, ply)
 	if not IsValid(ply) then return end
 	local now = RealTime()
@@ -107,14 +114,20 @@ net.Receive("EvilStomach", function(_, ply)
 		if v and v.digested then updates[#updates + 1] = Record(v) end
 	end
 
-	local data = util.Compress(util.TableToJSON({
+	local out = {
 		rev = st.rev, count = #victims, victims = fresh, updates = updates,
 		summary = ent.EvilStomachSummary and ent:EvilStomachSummary() or nil,
 		progress = ent.EvilStomachProgress and ent:EvilStomachProgress() or nil,
-	}))
+	}
+	local data = util.Compress(util.TableToJSON(out))
+	while #data > LIMIT and (#out.victims > 0 or #out.updates > 0) do
+		out.victims, out.updates = Half(out.victims), Half(out.updates)
+		data = util.Compress(util.TableToJSON(out))
+	end
+	if #data > LIMIT then return end
 	net.Start("EvilStomach")
 	net.WriteEntity(ent)
-	net.WriteUInt(#data, 16)
+	net.WriteUInt(#data, 32)
 	net.WriteData(data, #data)
 	net.Send(ply)
 end)

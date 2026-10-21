@@ -290,7 +290,7 @@ end
 
 net.Receive("EvilStomach", function()
 	local ent = net.ReadEntity()
-	local raw = util.Decompress(net.ReadData(net.ReadUInt(16)))
+	local raw = util.Decompress(net.ReadData(net.ReadUInt(32)))
 	local data = raw and util.JSONToTable(raw)
 	if not data or not IsValid(current) then return end
 	local view = current.view
