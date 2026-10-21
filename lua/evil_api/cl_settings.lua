@@ -23,10 +23,14 @@ local function Pack(c)
 	return math.Round(c.r) * 65536 + math.Round(c.g) * 256 + math.Round(c.b)
 end
 
-function Evil.AdminOnly(control)
+function Evil.AdminOnly(control, locked)
 	local ply = LocalPlayer()
-	local admin = IsValid(ply) and ply:IsSuperAdmin()
+	local admin = IsValid(ply) and ply:IsSuperAdmin() and not locked
 	if control:IsEnabled() ~= admin then control:SetEnabled(admin) end
+end
+
+function Settings:Locked(s)
+	return s.lock ~= nil and self:Get(s.lock) ~= 0
 end
 
 function Settings:Presets(panel)
@@ -86,7 +90,7 @@ function Settings:Row(panel, s)
 		control:SetChecked(cv:GetBool())
 		control.OnChange = function(_, on) Send(s, on and 1 or 0) end
 		control.Think = function(box)
-			Evil.AdminOnly(box)
+			Evil.AdminOnly(box, self:Locked(s))
 			if Settled(s) and box:GetChecked() ~= cv:GetBool() then box:SetChecked(cv:GetBool()) end
 		end
 	else
@@ -94,7 +98,7 @@ function Settings:Row(panel, s)
 		control:SetValue(cv:GetFloat())
 		control.OnValueChanged = function(_, value) Send(s, value) end
 		control.Think = function(slider)
-			Evil.AdminOnly(slider)
+			Evil.AdminOnly(slider, self:Locked(s))
 			if Settled(s) and not slider:IsEditing() and math.abs(slider:GetValue() - cv:GetFloat()) > 1e-3 then
 				slider:SetValue(cv:GetFloat())
 			end

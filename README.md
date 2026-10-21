@@ -46,7 +46,7 @@ settings:Get("speed")
 settings:Color("color")
 ```
 
-Each row becomes the convar `<id>_<name>`. A max of 1 with no decimals is a checkbox, `color` is a colour mixer, anything else is a slider. `needs` hides the row unless that global exists.
+Each row becomes the convar `<id>_<name>`. A max of 1 with no decimals is a checkbox, `color` is a colour mixer, anything else is a slider. `needs` hides the row unless that global exists. `lock` names another row and greys this one out while that one is on.
 
 Optional fields: `fill = true` makes presets put anything they leave out back to its default, `reset = false` drops the reset button, and `top` / `extra = function(panel) end` add your own controls above or below the rest. `Evil.AdminOnly` as a control's Think greys it out for anyone but superadmins.
 
