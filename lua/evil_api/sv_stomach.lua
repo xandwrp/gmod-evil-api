@@ -83,16 +83,17 @@ local function Record(v)
 end
 
 net.Receive("EvilStomach", function(_, ply)
+	if not IsValid(ply) then return end
+	local now = RealTime()
+	if now < (ply.EvilStomachAsk or 0) then return end
+	ply.EvilStomachAsk = now + GAP
 	local ent = net.ReadEntity()
+	local st = IsValid(ent) and ent.EvilStomach
+	if not st or gamemode.Call("CanProperty", ply, "evil_stomach", ent) == false then return end
 	local rev = net.ReadUInt(16)
 	local have = net.ReadUInt(16)
 	local pending = {}
 	for i = 1, net.ReadUInt(8) do pending[i] = net.ReadUInt(16) end
-	local st = IsValid(ent) and ent.EvilStomach
-	if not st then return end
-	local now = RealTime()
-	if now < (ply.EvilStomachAsk or 0) then return end
-	ply.EvilStomachAsk = now + GAP
 
 	local victims = st.victims
 	if rev ~= st.rev then have, pending = 0, {} end
