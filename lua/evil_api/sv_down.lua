@@ -238,7 +238,8 @@ hook.Add("EntityTakeDamage", "EvilDown", function(target, dmg)
 	local ent = target.EvilDowned
 	if not IsValid(ent) or not downed[ent] then return end
 	local attacker, inflictor = dmg:GetAttacker(), dmg:GetInflictor()
-	if dmg:IsDamageType(DMG_CRUSH) and (not IsValid(attacker) or attacker:IsWorld() or attacker == target) then return end
+	if dmg:IsDamageType(DMG_CRUSH) and not (IsValid(attacker) and attacker ~= ent
+		and (attacker:IsPlayer() or attacker:IsNPC() or attacker:IsNextBot())) then return end
 	local d = DamageInfo()
 	d:SetDamage(dmg:GetDamage())
 	d:SetDamageType(dmg:GetDamageType())
