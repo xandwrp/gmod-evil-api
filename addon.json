@@ -4,6 +4,7 @@
 	"tags": [ "fun" ],
 	"ignore": [
 		"*.md",
+		"LICENSE",
 		"*.gma",
 		".git*",
 		"tools/*",
