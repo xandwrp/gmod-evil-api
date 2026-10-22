@@ -42,7 +42,7 @@ end
 
 function Settings:PresetValue(preset, s)
 	local v = preset.values[s.name]
-	if v == nil and self.fill then v = s.default end
+	if v == nil and self.fill and not s.keep then v = s.default end
 	return v
 end
 
