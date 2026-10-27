@@ -114,9 +114,33 @@ local function Stand(ent, from, filter, home)
 	return home
 end
 
-local function Mark(ent, rag)
-	ent:SetNW2Bool("EvilDown", rag ~= nil)
+local function Mark(ent, rag, fake)
+	ent:SetNW2Bool("EvilDown", rag ~= nil and not fake)
 	ent:SetNW2Entity("EvilRagdoll", rag or NULL)
+end
+
+local function Fake(ent)
+	if not ent:IsPlayer() then return end
+	local rag = ent:GetTable().FakeRagdoll
+	if IsEntity(rag) and IsValid(rag) then return rag end
+end
+
+local function Zcity(ent)
+	if not ent:IsPlayer() or not (istable(hg) and isfunction(hg.Fake)) then return end
+	local rag = Fake(ent)
+	if rag then return rag end
+	if ent:InVehicle() then ent:ExitVehicle() end
+	hg.Fake(ent, nil, true, true)
+	return Fake(ent)
+end
+
+local function Free(ent, d)
+	downed[ent] = nil
+	if IsValid(d.rag) then d.rag.EvilDowned = nil end
+	if not IsValid(ent) then return end
+	Mark(ent, nil)
+	Evil.Unclaim(ent, d.held or d.rag)
+	hook.Run("EvilUp", ent)
 end
 
 local function Release(ent, taker)
@@ -148,6 +172,17 @@ function Evil.Down(ent, push, time)
 	end
 	if not (ent:IsPlayer() or ent:IsNPC()) or ent:Health() <= 0 or not Evil.Claimable(ent) then return end
 	if ent:IsPlayer() and not ent:Alive() then return end
+	local fake = Zcity(ent)
+	if fake then
+		if not Evil.Claim(ent, fake, { loose = true, release = Release }) then return end
+		Push(fake, push)
+		d = { rag = fake, fake = true, up = CurTime() + time, home = ent:GetPos(), last = fake:GetPos() }
+		downed[ent] = d
+		fake.EvilDowned = ent
+		Mark(ent, fake, true)
+		hook.Run("EvilDown", ent, fake)
+		return fake
+	end
 	local model = ent:GetModel()
 	if not model or not util.IsValidRagdoll(model) then return end
 	local rag = ents.Create("prop_ragdoll")
@@ -180,6 +215,11 @@ end
 function Evil.Up(ent)
 	local d = downed[ent]
 	if not d then return end
+	if d.fake then
+		Free(ent, d)
+		if IsValid(ent) and ent:Alive() and Fake(ent) == d.rag then hg.FakeUp(ent, true, true) end
+		return
+	end
 	downed[ent] = nil
 	local rag = d.rag
 	if IsValid(ent) then
@@ -245,7 +285,7 @@ local function Corpse(ent)
 	Evil.Unclaim(ent)
 	if IsValid(rag) then
 		rag.EvilDowned = nil
-		rag:Fire("FadeAndRemove", tostring(CORPSE_FADE), CORPSE)
+		if not d.fake then rag:Fire("FadeAndRemove", tostring(CORPSE_FADE), CORPSE) end
 	end
 end
 
@@ -259,7 +299,17 @@ hook.Add("Think", "EvilDown", function()
 	for ent, d in pairs(downed) do
 		if not IsValid(ent) then
 			downed[ent] = nil
-			SafeRemoveEntity(d.rag)
+			if not d.fake then SafeRemoveEntity(d.rag) end
+		elseif d.fake then
+			if Fake(ent) ~= d.rag then
+				Free(ent, d)
+			else
+				d.last = d.rag:GetPos()
+				if d.held and Evil.Owner(ent) ~= d.held then Loosen(ent, d) end
+				if d.held then
+					Pull(ent, d, dt)
+				elseif now >= d.up then Free(ent, d) end
+			end
 		elseif not IsValid(d.rag) then
 			Evil.Up(ent)
 		else
@@ -275,7 +325,7 @@ end)
 
 hook.Add("EntityTakeDamage", "EvilDown", function(target, dmg)
 	local ent = target.EvilDowned
-	if not IsValid(ent) or not downed[ent] then return end
+	if not IsValid(ent) or not downed[ent] or downed[ent].fake then return end
 	local attacker, inflictor = dmg:GetAttacker(), dmg:GetInflictor()
 	if dmg:IsDamageType(DMG_CRUSH) and not (IsValid(attacker) and attacker ~= ent
 		and (attacker:IsPlayer() or attacker:IsNPC() or attacker:IsNextBot())) then return end
@@ -292,8 +342,10 @@ end)
 hook.Add("OnNPCKilled", "EvilDown", Corpse)
 
 hook.Add("PostPlayerDeath", "EvilDown", function(ply)
-	if not downed[ply] then return end
+	local d = downed[ply]
+	if not d then return end
 	Corpse(ply)
+	if d.fake then return end
 	local own = ply:GetRagdollEntity()
 	if IsValid(own) then own:Remove() end
 end)
@@ -302,9 +354,23 @@ hook.Add("PlayerSpawn", "EvilDown", function(ply)
 	local d = downed[ply]
 	if d then
 		downed[ply] = nil
-		SafeRemoveEntity(d.rag)
+		if d.fake then
+			if IsValid(d.rag) then d.rag.EvilDowned = nil end
+		else
+			SafeRemoveEntity(d.rag)
+		end
 	end
 	Mark(ply, nil)
+end)
+
+hook.Add("Should Fake Up", "EvilDown", function(ply)
+	local d = downed[ply]
+	if d and d.fake then return true end
+end)
+
+hook.Add("CanControlFake", "EvilDown", function(ply)
+	local d = downed[ply]
+	if d and d.fake and d.held then return true end
 end)
 
 hook.Add("CreateEntityRagdoll", "EvilDown", function(owner, rag)
