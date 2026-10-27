@@ -1,9 +1,14 @@
+local function Dead(owner)
+	return owner:IsPlayer() and not owner:Alive() or owner:IsNPC() and owner:Health() <= 0
+end
+
 function Evil.Owner(ent)
 	if not IsValid(ent) then return end
 	local owner
 	if SERVER then
 		local c = ent.EvilClaim
 		owner = c and c.owner
+		if IsValid(owner) and Dead(owner) then return end
 	else
 		owner = ent:GetNW2Entity("EvilOwner")
 	end
@@ -15,7 +20,7 @@ if CLIENT then return end
 function Evil.Claimable(ent, by)
 	if not IsValid(ent) then return false end
 	local c = ent.EvilClaim
-	return not c or not IsValid(c.owner) or c.owner == by or c.loose
+	return not c or not IsValid(c.owner) or Dead(c.owner) or c.owner == by or c.loose
 end
 
 function Evil.Claim(ent, owner, opts)
