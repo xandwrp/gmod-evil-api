@@ -12,6 +12,7 @@ local PUSH_UP = 150
 local GRIP_SPEED = 600
 local GRIP_ARRIVE = 0.1
 local GRIP_DAMP = 0.8
+local STRAY = 64
 
 local downed = {}
 
@@ -28,11 +29,49 @@ local function Dress(rag, ent)
 	if ent.GetPlayerColor then rag:SetNW2Vector("EvilColor", ent:GetPlayerColor()) end
 end
 
+local function Posed(ent, bone)
+	if not bone or bone < 0 or not (ent:BoneHasFlag(bone, BONE_USED_BY_HITBOX) or ent:BoneHasFlag(bone, BONE_USED_BY_ATTACHMENT)) then return end
+	local m = ent:GetBoneMatrix(bone)
+	if not m then return end
+	local p = m:GetTranslation()
+	if p.x ~= p.x or p.y ~= p.y or p.z ~= p.z then return end
+	local reach = STRAY + ent:BoundingRadius()
+	if p:DistToSqr(ent:WorldSpaceCenter()) < reach * reach then return m end
+end
+
+local function Above(rag, i)
+	local bone = rag:GetBoneParent(rag:TranslatePhysBoneToBone(i))
+	while bone and bone >= 0 do
+		local p = rag:TranslateBoneToPhysBone(bone)
+		if p and p >= 0 and p ~= i then return p end
+		bone = rag:GetBoneParent(bone)
+	end
+end
+
 local function Pose(rag, ent, vel)
-	for i = 0, rag:GetPhysicsObjectCount() - 1 do
+	local n = rag:GetPhysicsObjectCount()
+	local rest, pose = {}, {}
+	for i = 0, n - 1 do
 		local phys = rag:GetPhysicsObjectNum(i)
 		if IsValid(phys) then
-			local m = ent:GetBoneMatrix(rag:TranslatePhysBoneToBone(i))
+			local m = Matrix()
+			m:SetTranslation(phys:GetPos())
+			m:SetAngles(phys:GetAngles())
+			rest[i] = m
+			pose[i] = Posed(ent, rag:TranslatePhysBoneToBone(i))
+		end
+	end
+	local function Place(i, depth)
+		if pose[i] or not rest[i] or depth > n then return pose[i] end
+		local p = Above(rag, i)
+		local pm = p and rest[p] and Place(p, depth + 1)
+		if pm then pose[i] = pm * rest[p]:GetInverseTR() * rest[i] end
+		return pose[i]
+	end
+	for i = 0, n - 1 do
+		local phys = rag:GetPhysicsObjectNum(i)
+		if IsValid(phys) then
+			local m = Place(i, 0)
 			if m then
 				phys:SetPos(m:GetTranslation(), true)
 				phys:SetAngles(m:GetAngles())
