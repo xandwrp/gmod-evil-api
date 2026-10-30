@@ -9,6 +9,8 @@
 		".git*",
 		"tools/*",
 		"renders/*",
-		"workshop/*"
+		"workshop/*",
+		"justfile",
+		".luacheckrc"
 	]
 }
