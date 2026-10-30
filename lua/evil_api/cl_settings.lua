@@ -108,6 +108,8 @@ function Settings:Row(panel, s)
 end
 
 function Settings:Build(panel)
+	local ply = LocalPlayer()
+	if not (IsValid(ply) and ply:IsSuperAdmin()) then panel:Help("Only superadmins can change these settings") end
 	if self.top then self.top(panel) end
 	self:Presets(panel)
 	for _, s in ipairs(self.rows) do
