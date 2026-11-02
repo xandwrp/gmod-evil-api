@@ -19,8 +19,12 @@ hook.Add("CreateClientsideRagdoll", "EvilDown", function(ent, rag)
 	end
 end)
 
-hook.Add("CalcView", "EvilDown", function(ply, _, angles, fov)
-	if not ply:Alive() or not ply:GetNW2Bool("EvilDown") then return end
+local function Downed(ply)
+	return ply:Alive() and ply:GetNW2Bool("EvilDown")
+end
+
+Evil.View("EvilDown", Downed, function(ply, _, angles, fov)
+	if not Downed(ply) then return end
 	local rag = ply:GetNW2Entity("EvilRagdoll")
 	if not IsValid(rag) then return end
 	local center = rag:GetPos() + LIFT

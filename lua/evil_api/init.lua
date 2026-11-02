@@ -11,6 +11,7 @@ if SERVER then
 	AddCSLuaFile("evil_api/cl_settings.lua")
 	AddCSLuaFile("evil_api/sh_claim.lua")
 	AddCSLuaFile("evil_api/sh_freeze.lua")
+	AddCSLuaFile("evil_api/cl_view.lua")
 	AddCSLuaFile("evil_api/cl_down.lua")
 	AddCSLuaFile("evil_api/sh_mash.lua")
 	AddCSLuaFile("evil_api/cl_mash.lua")
@@ -35,6 +36,7 @@ if SERVER then
 	include("evil_api/sv_hitbox.lua")
 	include("evil_api/sv_stomach.lua")
 else
+	include("evil_api/cl_view.lua")
 	include("evil_api/cl_down.lua")
 	include("evil_api/cl_mash.lua")
 	include("evil_api/cl_pose.lua")

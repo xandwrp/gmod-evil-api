@@ -52,8 +52,12 @@ hook.Add("NetworkEntityCreated", "EvilPose", function(ent)
 	if ent:GetNW2Bool("EvilPosed") then Attach(ent, true) end
 end)
 
-hook.Add("CalcView", "EvilPose", function(ply, _, angles, fov)
-	if not ply:Alive() or not ply:GetNW2Bool("EvilPosed") then return end
+local function Posed(ply)
+	return ply:Alive() and ply:GetNW2Bool("EvilPosed")
+end
+
+Evil.View("EvilPose", Posed, function(ply, _, angles, fov)
+	if not Posed(ply) then return end
 	local center = (Where(ply) or ply:GetPos()) + ply:OBBCenter()
 	local tr = util.TraceHull({
 		start = center, endpos = center - angles:Forward() * BACK,
